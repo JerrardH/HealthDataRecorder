@@ -9,7 +9,6 @@ import numpy as np
 import pandas as pd
 
 
-
 class HealthRecorderApp:
     def __init__(self, root):
         self.root = root
@@ -41,7 +40,8 @@ class HealthRecorderApp:
         if os.path.exists(self.memory_file):
             with open(self.memory_file, 'r') as file:
                 self.folder_path = file.read().strip()
-                if os.path.exists(self.folder_path) and os.path.exists(os.path.join(self.folder_path, 'InitializeDataFile.csv')):
+                if os.path.exists(self.folder_path) and os.path.exists(
+                        os.path.join(self.folder_path, 'InitializeDataFile.csv')):
                     print(f"Using previously selected folder: {self.folder_path}")
                     return True
         return False
@@ -78,7 +78,8 @@ class HealthRecorderApp:
 
         # Create buttons for user choice
         weight_button = tk.Button(self.root, text="Record weight", command=self.record_weight, height=4, width=20)
-        blood_pressure_button = tk.Button(self.root, text="Record blood pressure", command=self.record_bloodpressure, height=4, width=20)
+        blood_pressure_button = tk.Button(self.root, text="Record blood pressure", command=self.record_bloodpressure,
+                                          height=4, width=20)
         graph_button = tk.Button(self.root, text="View history", command=self.generate_graphs, height=4, width=20)
         close_button = tk.Button(self.root, text="Exit", command=sys.exit, height=4, width=20)
 
@@ -122,7 +123,7 @@ class HealthRecorderApp:
             csv_file_path = os.path.join(self.folder_path, 'InitializeDataFile.csv')
             with open(csv_file_path, 'a', newline='') as file:
                 writer = csv.writer(file)
-                writer.writerow([datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),'weight', unit, weight, "N/A"])
+                writer.writerow([datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'), 'weight', unit, weight, "N/A"])
 
         # Entry display in the grid_frame
         entry_display = tk.Entry(grid_frame, textvariable=entry_var, font=('Helvetica', 16), justify='right')
@@ -208,7 +209,8 @@ class HealthRecorderApp:
             with open(csv_file_path, 'a', newline='') as file:
                 writer = csv.writer(file)
                 writer.writerow(
-                    [datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),'bloodpressure', 'mmHg', upper_pressure, lower_pressure])
+                    [datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'), 'bloodpressure', 'mmHg', upper_pressure,
+                     lower_pressure])
 
         # Labels and Entry Fields for High and Low Pressure
         tk.Label(grid_frame, text="High Pressure (systolic, mmHg)", font=('Helvetica', 12)).grid(row=0, column=0,
@@ -254,7 +256,6 @@ class HealthRecorderApp:
         main_menu_button = tk.Button(self.root, text="Main Menu", command=self.ask_user_choice, font=('Helvetica', 14))
         main_menu_button.pack(pady=10)
 
-
     def generate_graphs(self):
         # Clear the window
         for widget in self.root.winfo_children():
@@ -294,26 +295,29 @@ class HealthRecorderApp:
         try:
             df = pd.read_csv(csv_file_path)
             df['Date'] = pd.to_datetime(df['Date'])
-            # Filter and create a copy to avoid setting value on a slice of df
             weight_data = df[df['Data type'] == 'weight'].copy()
 
-            if not weight_data.empty:
-                # Convert weights if necessary
-                target_unit = self.weight_graph_unit_var.get()
-                for index, row in weight_data.iterrows():
-                    converted_weight = self.convert_weight(row['Data1'], row['Unit'], target_unit)
-                    weight_data.loc[index, 'Data1'] = converted_weight
+            if weight_data.empty:
+                messagebox.showinfo("Info", "No weight data available to plot.")
+                return
 
-                plt.figure(figsize=(10, 5))
-                plt.plot(weight_data['Date'], weight_data['Data1'], marker='o')
-                plt.title('Weight')
-                plt.xlabel('Date')
-                plt.ylabel(f'Weight ({target_unit})')
-                y_min, y_max = plt.ylim()
-                plt.yticks(np.arange(y_min, y_max, step=round((y_max - y_min) / 10,0)))  # Adjust the step as needed
-                plt.xticks(rotation=45)
-                plt.tight_layout()
-                plt.show()
+            # Convert weights if necessary
+            target_unit = self.weight_graph_unit_var.get()
+            for index, row in weight_data.iterrows():
+                converted_weight = self.convert_weight(row['Data1'], row['Unit'], target_unit)
+                weight_data.at[index, 'Data1'] = converted_weight
+
+            # Setting the figure size smaller or more appropriate if needed
+            plt.figure(figsize=(8, 4))
+            plt.plot(weight_data['Date'], weight_data['Data1'], marker='o')
+            plt.title('Weight Over Time')
+            plt.xlabel('Date')
+            plt.ylabel(f'Weight ({target_unit})')
+            plt.xticks(rotation=45)
+            plt.tight_layout()
+
+            # Using plt.show() to display the plot
+            plt.show()
 
         except Exception as e:
             messagebox.showerror("Error", f"Failed to generate weight graph: {e}")
@@ -327,14 +331,16 @@ class HealthRecorderApp:
 
             if not blood_pressure_data.empty:
                 plt.figure(figsize=(10, 5))
-                plt.plot(blood_pressure_data.index, blood_pressure_data['Data1'], marker='o', label='High Pressure (systolic)')
-                plt.plot(blood_pressure_data.index, blood_pressure_data['Data2'], marker='o', label='Low Pressure (diastolic)')
+                plt.plot(blood_pressure_data.index, blood_pressure_data['Data1'], marker='o',
+                         label='High Pressure (systolic)')
+                plt.plot(blood_pressure_data.index, blood_pressure_data['Data2'], marker='o',
+                         label='Low Pressure (diastolic)')
                 plt.title('Blood Pressure')
                 plt.xlabel('Date')
                 plt.ylabel('Pressure (mmHg)')
                 plt.legend()
                 y_min, y_max = plt.ylim()
-                plt.yticks(np.arange(y_min, y_max, step=round((y_max - y_min) / 10,0)))  # Adjust the step as needed
+                plt.yticks(np.arange(y_min, y_max, step=round((y_max - y_min) / 10, 0)))  # Adjust the step as needed
                 plt.xticks(rotation=45)
                 plt.tight_layout()
                 plt.show()
